@@ -1,0 +1,18 @@
+[% WRAPPER site/default_wrapper -%]
+[% IF admin_domains.size -%]
+<span class="admin_username">[% admin_user.username %]</span> can manage the following domains:
+<br><br>
+<table class="domain_list">
+<thead><tr><th>Domain</th><th>Default Policy</th></tr></thead>
+<tbody>
+[% FOREACH domain IN admin_domains -%]
+<tr><td><a href="[% c.uri_for(c.controller('Domain').action_for('domain_view'), [domain.domain] ) %]"
+    >[% domain.domain %]</a></td>
+<td>[% IF domain_policies.$domain %][% domain_policies.$domain %][% ELSE %]no default policy[% END %]</td></tr>
+[% END -%]
+</tbody>
+</table>
+[% ELSE -%]
+This admin hasn't been assigned to any domains.  Weird.
+[% END -%]
+[% END -%]

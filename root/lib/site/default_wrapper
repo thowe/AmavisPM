@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>Spam Manage</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet"
+      href="/static/css/style.css" type="text/css" media="screen"
+      charset="us-ascii">
+</head>
+<body>
+<div id="header">
+<img class="logo" src="/static/images/logo.png" alt="[% logoname %]">
+<h1>Spam Settings Manager</h1>
+</div>
+<div id="content">
+[% IF message -%]
+<div class="message">[% message %]</div>
+[%- END %]
+[% content %]
+</div>
+</body>
+</html>

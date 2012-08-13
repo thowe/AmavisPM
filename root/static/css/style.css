@@ -1,0 +1,35 @@
+body {
+margin: 0px;
+padding-top: 4px;
+border-top: 6px solid #000000;
+}
+
+#content {
+margin-right: 10%;
+margin-left: 10%;
+}
+
+h1, h2 {
+color: #000000;
+}
+
+img.logo {
+display: inline-block;
+vertical-align: middle;
+}
+
+div#header h1 {
+display: inline-block;
+}
+
+span.admin_username {
+font-weight: bold;
+}
+
+table.domain_list td {
+padding-right: 2em;
+}
+
+table.domain_list th {
+text-align: left;
+}

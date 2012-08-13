@@ -1,0 +1,21 @@
+[% WRAPPER site/default_wrapper -%]
+<h2>[% mail_domain %]</h2>
+<p>default spam filtering policy: <strong>[% IF policy %][% policy.policy_name %][% ELSE %]filtering disabled[% END %]</strong></p>
+[% IF whitelist %]
+<ul>
+[% FOREACH waddr IN whitelist -%]
+<li>[% waddr.email %]</li>
+[% END -%]
+</ul>
+[% END -%]
+[% IF mailboxes %]
+<ul>
+[% FOREACH mailbox IN mailboxes -%]
+<li><a href="[% c.uri_for(c.controller('Domain').action_for('mailbox'), [mailbox.domain.domain, mailbox.local_part] ) %]"
+    >[% mailbox.username %]</a></li>
+[% END -%]
+</ul>
+[% ELSE -%]
+No active mailboxes under this domain.  Weird.
+[% END -%]
+[% END -%]
