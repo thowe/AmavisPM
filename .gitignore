@@ -1,0 +1,6 @@
+inc
+blib
+Makefile
+META.yml
+Makefile.old
+root/static/images/logo.png
