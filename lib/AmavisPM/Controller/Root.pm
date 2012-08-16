@@ -30,11 +30,10 @@ to the login page.  Otherwise we go about our normal business.
 
 sub auto : Private {
     my ($self, $c) = @_;
-
+    $c->stash->{'logoname'} = $c->config->{'logoname'};
     if(!$c->user_exists() && $c->req->path() ne 'auth/logout') {
         $c->detach('/auth/login');
     }
-
     return 1;
 }
 

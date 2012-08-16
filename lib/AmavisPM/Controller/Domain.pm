@@ -22,8 +22,6 @@ View and edit spam policies and white/black lists for domains and individual use
 
 sub base :PathPart('domain') :Chained('/') :CaptureArgs(0) {
   my ($self, $c, $domain) = @_;
-
-  $c->stash->{'logoname'} = $c->config->{'logoname'};
 }
 
 =head2 domain
