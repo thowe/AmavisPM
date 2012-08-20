@@ -79,6 +79,8 @@ sub check_domain_admin :Private {
     my $admin = $c->model('PostAdminDB::Admin')->find(
                     { username => $c->user->username } );
 
+    my $mail_domain = $c->stash->{'mail_domain'};
+
     if( !defined $admin ) {
         $c->response->redirect($c->uri_for(
             $c->controller('Auth')->action_for('logout') ));
@@ -87,7 +89,7 @@ sub check_domain_admin :Private {
 
     my @admin_domains = $admin->domains(
                             { 'domain.active' => 1,
-                              'domain.domain' => [ -or => { '=', $c->stash->{'mail_domain'} },
+                              'domain.domain' => [ -or => { '=', $mail_domain->domain },
                                                           { '=', 'ALL' } ] },
                             {} );
 
@@ -122,9 +124,65 @@ domain name capture part of a chain
 =cut
 
 sub domain_part :PathPart('') :Chained('base') :CaptureArgs(1) {
-    my ($self, $c, $mail_domain) = @_;
+    my ($self, $c, $domain) = @_;
 
-    $c->stash->{'mail_domain'} = $mail_domain;
+
+    my $mail_domain = $c->model('PostAdminDB::Domain')->find(
+                          { domain => $domain,
+                            active => 1 } );
+
+    if( defined $mail_domain ) {
+        $c->stash->{'mail_domain'} = $mail_domain;
+    }
+    else {
+        $c->response->redirect($c->uri_for(
+            $self->action_for('domain') ));
+        $c->detach();
+    }
+}
+
+=head2 domain_set_policy
+
+Update the configured domain policy.
+
+=cut
+
+sub set_domain_policy :PathPart('setpolicy') :Chained('domain_part') :Args(0) {
+    my ($self, $c) = @_;
+
+    $c->forward('check_realm_mailbox');
+    $c->forward('check_domain_admin');
+
+    my $params = $c->req->params;
+
+    my $mail_domain = $c->stash->{'mail_domain'};
+
+    my $amavis_domain_user = $c->model('AmavisDB::User')->find(
+                                 { 'email' => '@' . $mail_domain->domain } );
+
+    my $amavis_policy = $c->model('AmavisDB::Policy')->find(
+                                 { 'id' => $params->{'policy_select'} } ) if $params->{'policy_select'} ne 'none';
+
+    if( $params->{'policy_select'} eq 'none' and defined $amavis_domain_user ) {
+            $amavis_domain_user->delete;
+    }
+    elsif( defined $amavis_policy ) {
+        if( defined $amavis_domain_user ) {
+            $amavis_domain_user->policy( $amavis_policy );
+            $amavis_domain_user->update;
+        }
+        else {
+            $amavis_domain_user = $c->model('AmavisDB::User')->new(
+                                      { 'email' => '@' . $mail_domain->domain,
+                                        'priority' => 3,
+                                        'policy_id' => $amavis_policy->id } );
+            $amavis_domain_user->insert;
+        }
+    }
+
+    $c->response->redirect($c->uri_for(
+        $self->action_for('domain_view'), [$mail_domain->domain] ));
+    $c->detach();
 }
 
 =head2 domain_view
@@ -142,9 +200,7 @@ sub domain_view :PathPart('') :Chained('domain_part') :Args(0) {
     $c->forward('check_realm_mailbox');
     $c->forward('check_domain_admin');
 
-    my $mail_domain = $c->model('PostAdminDB::Domain')->find(
-                          { domain => $c->stash->{'mail_domain'},
-                            active => 1 } );
+    my $mail_domain = $c->stash->{'mail_domain'};
 
     my @mailboxes = $mail_domain->mailboxes(
                         { 'active' => 1 },
@@ -153,16 +209,22 @@ sub domain_view :PathPart('') :Chained('domain_part') :Args(0) {
     my $amavis_domain_user = $c->model('AmavisDB::User')->find(
                                  { 'email' => '@' . $mail_domain->domain } );
 
+    my $policies_rs = $c->model('AmavisDB::Policy');
+
     my $amavis_policy;
-    my @whitelist;
+    my (@whitelist, @blacklist);
     if( defined $amavis_domain_user ) {
         $amavis_policy = $amavis_domain_user->policy;
         @whitelist = $amavis_domain_user->blacklisted_addresses;
+        @blacklist = $amavis_domain_user->whitelisted_addresses;
     }
 
+    $c->stash->{'amavis_user'} = $amavis_domain_user;
     $c->stash->{'mailboxes'} = \@mailboxes;
     $c->stash->{'policy'} = $amavis_policy;
     $c->stash->{'whitelist'} = \@whitelist;
+    $c->stash->{'blacklist'} = \@blacklist;
+    $c->stash->{'available_policies'} = $policies_rs;
 }
 
 sub mailbox :PathPart('mailbox') :Chained('domain_part') :Args(1) {
@@ -173,7 +235,7 @@ sub mailbox :PathPart('mailbox') :Chained('domain_part') :Args(1) {
     }
     $c->forward('check_domain_admin');
 
-    $c->response->body('Looks like we want ' . $mailbox . '@' . $c->stash->{'mail_domain'});
+    $c->response->body('Looks like we want ' . $mailbox . '@' . $c->stash->{'mail_domain'}->domain);
 }
 
 =head1 AUTHOR

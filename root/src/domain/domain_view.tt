@@ -1,7 +1,27 @@
 [% WRAPPER site/default_wrapper -%]
-<h2>[% mail_domain %]</h2>
-<p>default spam filtering policy: <strong>[% IF policy %][% policy.policy_name %][% ELSE %]filtering disabled[% END %]</strong></p>
-[% IF whitelist %]
+<p><a href="[% c.uri_for(c.controller('Domain').action_for('domain')) %]">back to domain list</a></p>
+<h2>[% mail_domain.domain %]</h2>
+<div class="filtering_policy">
+<h3>Default Filtering Policy</h3>
+<form action="[% c.uri_for(c.controller('Domain').action_for('set_domain_policy'), [mail_domain.domain] ) %]"
+      method="post">
+<table>
+<tr><td colspan="2">The current configured policy is <strong>[% IF policy %][% policy.policy_name %][% ELSE %]None[% END %]</strong></td></tr>
+<tr>
+<td><select name="policy_select" id="policy_select">
+<option value="none"[% IF available_policies == 0 %] selected[% END %]>filtering disabled</option>
+[%- IF available_policies.count %]
+[%- WHILE (policy_option = available_policies.next) %]
+<option value="[% policy_option.id %]"[% IF policy_option.id == policy.id %] selected[% END %]>[% policy_option.policy_name %]</option>
+[% END -%]
+[% END -%]
+</select></td>
+<td><input type="submit" id="updatebutton" name="updatebutton" value="Update"></td>
+</tr>
+</table>
+</form>
+</div>
+[% IF whitelist.size > 0 %]
 <ul>
 [% FOREACH waddr IN whitelist -%]
 <li>[% waddr.email %]</li>
@@ -11,7 +31,7 @@
 [% IF mailboxes %]
 <ul>
 [% FOREACH mailbox IN mailboxes -%]
-<li><a href="[% c.uri_for(c.controller('Domain').action_for('mailbox'), [mailbox.domain.domain, mailbox.local_part] ) %]"
+<li><a href="[% c.uri_for(c.controller('Domain').action_for('mailbox'), [mail_domain.domain, mailbox.local_part] ) %]"
     >[% mailbox.username %]</a></li>
 [% END -%]
 </ul>
