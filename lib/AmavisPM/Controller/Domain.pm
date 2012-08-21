@@ -153,32 +153,14 @@ sub set_domain_policy :PathPart('setpolicy') :Chained('domain_part') :Args(0) {
     $c->forward('check_realm_mailbox');
     $c->forward('check_domain_admin');
 
-    my $params = $c->req->params;
+    my $policy_selected = $c->req->params->{'policy_select'};
 
     my $mail_domain = $c->stash->{'mail_domain'};
 
-    my $amavis_domain_user = $c->model('AmavisDB::User')->find(
-                                 { 'email' => '@' . $mail_domain->domain } );
+    my $amavis_user_email = '@' . $mail_domain->domain;
 
-    my $amavis_policy = $c->model('AmavisDB::Policy')->find(
-                                 { 'id' => $params->{'policy_select'} } ) if $params->{'policy_select'} ne 'none';
-
-    if( $params->{'policy_select'} eq 'none' and defined $amavis_domain_user ) {
-            $amavis_domain_user->delete;
-    }
-    elsif( defined $amavis_policy ) {
-        if( defined $amavis_domain_user ) {
-            $amavis_domain_user->policy( $amavis_policy );
-            $amavis_domain_user->update;
-        }
-        else {
-            $amavis_domain_user = $c->model('AmavisDB::User')->new(
-                                      { 'email' => '@' . $mail_domain->domain,
-                                        'priority' => 3,
-                                        'policy_id' => $amavis_policy->id } );
-            $amavis_domain_user->insert;
-        }
-    }
+    $c->forward('setpolicy', [$amavis_user_email, $policy_selected,
+                              $c->config->{'policy_priority_domain'}]);
 
     $c->response->redirect($c->uri_for(
         $self->action_for('domain_view'), [$mail_domain->domain] ));
@@ -260,6 +242,41 @@ sub mailbox_view :PathPart('') :Chained('mailbox_part') :Args(0) {
     my ($self, $c) = @_;
 
     $c->response->body('Looks like we want ' . $c->stash->{'email_address'});
+}
+
+=head2 setpolicy
+
+Set the policy for a domain or mailbox user in the amavis database.
+
+=cut
+
+sub setpolicy :Private {
+    my ($self, $c, $email, $policy_id, $priority) = @_;
+
+    my $amavis_user = $c->model('AmavisDB::User')->find(
+                          { 'email' => $email } ) if defined $email;
+
+    my $amavis_policy = $c->model('AmavisDB::Policy')->find(
+                             { 'id' => $policy_id } ) if defined $policy_id and
+                                                         $policy_id =~ /\A\d+\z/;
+
+    if( $policy_id eq 'none' and defined $amavis_user ) {
+            $amavis_user->delete;
+    }
+    elsif( defined $amavis_policy ) {
+        if( defined $amavis_user ) {
+            $amavis_user->policy( $amavis_policy );
+            $amavis_user->update;
+        }
+        elsif(defined $priority and $priority =~ /\A\d+\z/) {
+            $amavis_user = $c->model('AmavisDB::User')->new(
+                               { 'email' => $email,
+                                 'priority' => $priority,
+                                 'policy_id' => $amavis_policy->id } );
+            $amavis_user->insert;
+        }
+    }
+
 }
 
 =head1 AUTHOR
