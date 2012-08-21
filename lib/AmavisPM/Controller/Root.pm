@@ -73,7 +73,7 @@ sub end : ActionClass('RenderView') {}
 
 =head1 AUTHOR
 
-Mail Domain Admin
+Tim Howe <timh@dirtymonday.net>
 
 =head1 LICENSE
 

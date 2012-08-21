@@ -6,7 +6,7 @@ BEGIN { extends 'Catalyst::Controller'; }
 
 =head1 NAME
 
-AmavisPM::Controller::Domain - Catalyst Controller
+AmavisPM Domain Controller
 
 =head1 DESCRIPTION
 
@@ -227,6 +227,12 @@ sub domain_view :PathPart('') :Chained('domain_part') :Args(0) {
     $c->stash->{'available_policies'} = $policies_rs;
 }
 
+=head2 mailbox_part
+
+mailbox capture part of a chain
+
+=cut
+
 sub mailbox_part :PathPart('mailbox') :Chained('domain_part') :CaptureArgs(1) {
     my ($self, $c, $mailbox) = @_;
 
@@ -242,6 +248,14 @@ sub mailbox_part :PathPart('mailbox') :Chained('domain_part') :CaptureArgs(1) {
     $c->stash->{'email_address'} = $mailbox . '@' . $mail_domain->domain;
 }
 
+=head2 mailbox_view
+
+If we are at /domain/somedomain.tld/mailbox/username and we are an admin for
+the domain or the user in question, we should display the defaults for this
+user and allow them to be edited.
+
+=cut
+
 sub mailbox_view :PathPart('') :Chained('mailbox_part') :Args(0) {
     my ($self, $c) = @_;
 
@@ -250,12 +264,19 @@ sub mailbox_view :PathPart('') :Chained('mailbox_part') :Args(0) {
 
 =head1 AUTHOR
 
-Mail Domain Admin
+Tim Howe <timh@dirtymonday.net>
 
 =head1 LICENSE
 
-This library is free software. You can redistribute it and/or modify
-it under the same terms as Perl itself.
+This software is copyright (c) 2012 by Tim Howe.
+
+This program is distributed in the hope that it will be useful, but it is
+provided "as is" and without any express or implied warranties. For details,
+see the full text of the license in the file LICENSE.
+
+This code is free software; you can redistribute it and/or modify it under
+the terms of the Artistic License 2.0. For details, see the full text of the
+license in the file LICENSE.
 
 =cut
 
