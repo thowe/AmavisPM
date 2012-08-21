@@ -227,15 +227,25 @@ sub domain_view :PathPart('') :Chained('domain_part') :Args(0) {
     $c->stash->{'available_policies'} = $policies_rs;
 }
 
-sub mailbox :PathPart('mailbox') :Chained('domain_part') :Args(1) {
+sub mailbox_part :PathPart('mailbox') :Chained('domain_part') :CaptureArgs(1) {
     my ($self, $c, $mailbox) = @_;
 
-    if( $c->user->username ne $mailbox . '@' . $c->stash->{'mail_domain'}) {
-        $c->forward('check_realm_mailbox');
-    }
-    $c->forward('check_domain_admin');
+    my $mail_domain = $c->stash->{'mail_domain'};
 
-    $c->response->body('Looks like we want ' . $mailbox . '@' . $c->stash->{'mail_domain'}->domain);
+    if( $c->user->username ne $mailbox . '@' . $mail_domain->domain ) {
+        $c->forward('check_realm_mailbox');
+        $c->forward('check_domain_admin');
+    }
+
+    #$c->response->body('Looks like we want ' . $mailbox . '@' . $c->stash->{'mail_domain'}->domain);
+    $c->stash->{'mailbox'} = $mailbox;
+    $c->stash->{'email_address'} = $mailbox . '@' . $mail_domain->domain;
+}
+
+sub mailbox_view :PathPart('') :Chained('mailbox_part') :Args(0) {
+    my ($self, $c) = @_;
+
+    $c->response->body('Looks like we want ' . $c->stash->{'email_address'});
 }
 
 =head1 AUTHOR

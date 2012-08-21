@@ -31,7 +31,7 @@
 [% IF mailboxes %]
 <ul>
 [% FOREACH mailbox IN mailboxes -%]
-<li><a href="[% c.uri_for(c.controller('Domain').action_for('mailbox'), [mail_domain.domain, mailbox.local_part] ) %]"
+<li><a href="[% c.uri_for(c.controller('Domain').action_for('mailbox_view'), [mail_domain.domain, mailbox.local_part] ) %]"
     >[% mailbox.username %]</a></li>
 [% END -%]
 </ul>
