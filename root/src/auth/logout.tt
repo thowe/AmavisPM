@@ -1,3 +1,4 @@
 [% WRAPPER site/default_wrapper -%]
 <h3>You are logged out.</h3>
+<a href="[% c.uri_for(c.controller('Auth').action_for('login')) %]">Login</a>
 [% END -%]

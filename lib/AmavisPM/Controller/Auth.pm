@@ -47,6 +47,18 @@ sub login :Local :Args(0) {
         $requested = $c->req->uri;
     }
 
+    if($c->user_exists) {
+        if($c->req->path =~ /auth\/login/) {
+            $c->response->redirect($c->uri_for(
+                $c->controller('Domain')->action_for('domain') ));
+            $c->detach();
+        }
+        else {
+            $c->res->redirect($requested);
+            $c->detach();
+        }
+    }
+
     $c->stash->{'requested'} = $requested;
 
     if( exists($params->{'username'}) ) {

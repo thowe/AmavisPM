@@ -195,6 +195,8 @@ __PACKAGE__->has_many(
   }
 );
 
+__PACKAGE__->many_to_many( 'white_black_addresses' => 'wblists', 'sid' );
+
 __PACKAGE__->many_to_many( 'whitelisted_addresses' => 'whitelisted', 'sid' );
 
 __PACKAGE__->many_to_many( 'blacklisted_addresses' => 'blacklisted', 'sid' );

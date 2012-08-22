@@ -32,6 +32,7 @@ requires 'Catalyst::Plugin::Session::Store::FastMmap';
 requires 'DateTime::Format::Pg';
 #requires 'Crypt::PasswdMD5';
 requires 'Digest::MD5';
+requires 'Email::Valid';
 
 catalyst;
 

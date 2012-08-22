@@ -16,5 +16,9 @@
 [%- END %]
 [% content %]
 </div>
+<div class="footer">
+<a href="[% c.uri_for(c.controller('Auth').action_for('logout')) %]">Logout</a> | 
+<a href="[% c.uri_for(c.controller('Domain').action_for('domain')) %]">Home</a>
+</div>
 </body>
 </html>

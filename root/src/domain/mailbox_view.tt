@@ -1,12 +1,13 @@
 [% WRAPPER site/default_wrapper -%]
-<p><a href="[% c.uri_for(c.controller('Domain').action_for('domain')) %]">back to domain list</a></p>
-<h2>[% mail_domain.domain %]</h2>
-<p>The settings here will be in effect for all users under the domain unless
-overridden at the individual mailbox.</p>
+[%- IF c.user_in_realm('admin') %]
+<p><a href="[% c.uri_for(c.controller('Domain').action_for('domain_view'), [mail_domain.domain]) %]">back to domain</a></p>
+[% END -%]
+<h2>[% email_address %]</h2>
+<p><em>Active</em> settings here will override the domain settings.</p>
 
 <div class="filtering_policy settings">
-<h3>Default Filtering Policy</h3>
-<form action="[% c.uri_for(c.controller('Domain').action_for('set_domain_policy'), [mail_domain.domain] ) %]"
+<h3>Filtering Policy</h3>
+<form action="[% c.uri_for(c.controller('Domain').action_for('set_mailbox_policy'), [mail_domain.domain, mailbox] ) %]"
       method="post">
 <table>
 <tr><td colspan="2">The current configured policy is <strong>[% IF policy %][% policy.policy_name %][% ELSE %]None[% END %]</strong></td></tr>
@@ -26,8 +27,8 @@ overridden at the individual mailbox.</p>
 </div>
 
 <div class="wlist settings">
-<h3>Default Whitelist</h3>
-<form action="[% c.uri_for(c.controller('Domain').action_for('delete_domain_wbaddr'), [mail_domain.domain] ) %]"
+<h3>Whitelist</h3>
+<form action="[% c.uri_for(c.controller('Domain').action_for('delete_mailbox_wbaddr'), [mail_domain.domain, mailbox] ) %]"
       method="post">
 <table>
 <tr>
@@ -43,7 +44,7 @@ overridden at the individual mailbox.</p>
 </tr>
 </table>
 </form>
-<form action="[% c.uri_for(c.controller('Domain').action_for('add_domain_wbaddr'), [mail_domain.domain] ) %]"
+<form action="[% c.uri_for(c.controller('Domain').action_for('add_mailbox_wbaddr'), [mail_domain.domain, mailbox] ) %]"
       method="post">
 <input type="hidden" name="listtype" id="addlisttypew" value="W">
 <table>
@@ -56,8 +57,8 @@ overridden at the individual mailbox.</p>
 </div>
 
 <div class="blist settings">
-<h3>Default Blacklist</h3>
-<form action="[% c.uri_for(c.controller('Domain').action_for('delete_domain_wbaddr'), [mail_domain.domain] ) %]"
+<h3>Blacklist</h3>
+<form action="[% c.uri_for(c.controller('Domain').action_for('delete_mailbox_wbaddr'), [mail_domain.domain, mailbox] ) %]"
       method="post">
 <table>
 <tr>
@@ -73,7 +74,7 @@ overridden at the individual mailbox.</p>
 </tr>
 </table>
 </form>
-<form action="[% c.uri_for(c.controller('Domain').action_for('add_domain_wbaddr'), [mail_domain.domain] ) %]"
+<form action="[% c.uri_for(c.controller('Domain').action_for('add_mailbox_wbaddr'), [mail_domain.domain, mailbox] ) %]"
       method="post">
 <input type="hidden" name="listtype" id="addlisttypew" value="B">
 <table>
@@ -84,16 +85,4 @@ overridden at the individual mailbox.</p>
 </table>
 </form>
 </div>
-
-[% IF mailboxes %]
-<h3>Users In [% mail_domain.domain %]</h3>
-<ul>
-[% FOREACH mailbox IN mailboxes -%]
-<li><a href="[% c.uri_for(c.controller('Domain').action_for('mailbox_view'), [mail_domain.domain, mailbox.local_part] ) %]"
-    >[% mailbox.username %]</a></li>
-[% END -%]
-</ul>
-[% ELSE -%]
-No active mailboxes under this domain.  Weird.
-[% END -%]
 [% END -%]

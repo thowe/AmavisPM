@@ -2,6 +2,8 @@ package AmavisPM::Controller::Domain;
 use Moose;
 use namespace::autoclean;
 
+use Email::Valid;
+
 BEGIN { extends 'Catalyst::Controller'; }
 
 =head1 NAME
@@ -112,7 +114,7 @@ sub check_realm_mailbox :Private {
     if( $c->user_in_realm('mailbox') ) {
         my ( $username, $domain ) = split(/@/, $c->user->username);
         $c->response->redirect($c->uri_for(
-            $self->action_for('mailbox') , [$domain, $username] ));
+            $self->action_for('mailbox_view') , [$domain, $username] ));
         $c->detach();
     }
 }
@@ -154,9 +156,7 @@ sub set_domain_policy :PathPart('setpolicy') :Chained('domain_part') :Args(0) {
     $c->forward('check_domain_admin');
 
     my $policy_selected = $c->req->params->{'policy_select'};
-
     my $mail_domain = $c->stash->{'mail_domain'};
-
     my $amavis_user_email = '@' . $mail_domain->domain;
 
     $c->forward('setpolicy', [$amavis_user_email, $policy_selected,
@@ -164,6 +164,117 @@ sub set_domain_policy :PathPart('setpolicy') :Chained('domain_part') :Args(0) {
 
     $c->response->redirect($c->uri_for(
         $self->action_for('domain_view'), [$mail_domain->domain] ));
+    $c->detach();
+}
+
+=head2 domain_mailbox_policy
+
+Update the configured mailbox policy.
+
+=cut
+
+sub set_mailbox_policy :PathPart('setpolicy') :Chained('mailbox_part') :Args(0) {
+    my ($self, $c) = @_;
+
+    my $policy_selected = $c->req->params->{'policy_select'};
+    my $mail_domain = $c->stash->{'mail_domain'};
+    my $amavis_user_email = $c->stash->{'email_address'};
+
+    $c->forward('setpolicy', [$amavis_user_email, $policy_selected,
+                              $c->config->{'policy_priority_mailbox'}]);
+
+    $c->response->redirect($c->uri_for(
+        $self->action_for('mailbox_view'), [$mail_domain->domain, $c->stash->{'mailbox'}] ));
+    $c->detach();
+}
+
+=head2 add_domain_wbaddr
+
+Add an address to a domain's white/black list.
+
+=cut
+
+sub add_domain_wbaddr :PathPart('addwblist') :Chained('domain_part') :Args(0) {
+    my ($self, $c) = @_;
+
+    $c->forward('check_realm_mailbox');
+    $c->forward('check_domain_admin');
+
+    my $mail_domain = $c->stash->{'mail_domain'};
+    my $amavis_user_email = '@' . $mail_domain->domain;
+    my $listed_address = $c->req->params->{'addwblist'};
+    my $list_type = $c->req->params->{'listtype'};
+
+    $c->forward('addwblist', [$amavis_user_email, $listed_address, $list_type]);
+
+    $c->response->redirect($c->uri_for(
+        $self->action_for('domain_view'), [$mail_domain->domain] ));
+    $c->detach();
+}
+
+=head2 add_mailbox_wbaddr
+
+Add an address to a mailbox's white/black list.
+
+=cut
+
+sub add_mailbox_wbaddr :PathPart('addwblist') :Chained('mailbox_part') :Args(0) {
+    my ($self, $c) = @_;
+
+    my $mail_domain = $c->stash->{'mail_domain'};
+    my $amavis_user_email = $c->stash->{'email_address'};
+    my $listed_address = $c->req->params->{'addwblist'};
+    my $list_type = $c->req->params->{'listtype'};
+
+    $c->forward('addwblist', [$amavis_user_email, $listed_address, $list_type]);
+
+    $c->response->redirect($c->uri_for(
+        $self->action_for('mailbox_view'), [$mail_domain->domain, $c->stash->{'mailbox'}] ));
+    $c->detach();
+}
+
+=head2 delete_domain_wbaddr
+
+Delete addresses from a domains's white/black list.
+
+=cut
+
+sub delete_domain_wbaddr :PathPart('delwblist') :Chained('domain_part') :Args(0) {
+    my ($self, $c) = @_;
+
+    $c->forward('check_realm_mailbox');
+    $c->forward('check_domain_admin');
+
+    my $params = $c->req->params;
+    my $mail_domain = $c->stash->{'mail_domain'};
+    my $amavis_user_email = '@' . $mail_domain->domain;
+    my $listed_addresses = $params->{'wblist_select'};
+
+    $c->forward('delwblist', [$amavis_user_email, $listed_addresses]);
+
+    $c->response->redirect($c->uri_for(
+        $self->action_for('domain_view'), [$mail_domain->domain] ));
+    $c->detach();
+}
+
+=head2 delete_mailbox_wbaddr
+
+Delete addresses from a mailbox's white/black list.
+
+=cut
+
+sub delete_mailbox_wbaddr :PathPart('delwblist') :Chained('mailbox_part') :Args(0) {
+    my ($self, $c) = @_;
+
+    my $params = $c->req->params;
+    my $mail_domain = $c->stash->{'mail_domain'};
+    my $amavis_user_email = $c->stash->{'email_address'};
+    my $listed_addresses = $params->{'wblist_select'};
+
+    $c->forward('delwblist', [$amavis_user_email, $listed_addresses]);
+
+    $c->response->redirect($c->uri_for(
+        $self->action_for('mailbox_view'), [$mail_domain->domain, $c->stash->{'mailbox'}] ));
     $c->detach();
 }
 
@@ -197,8 +308,8 @@ sub domain_view :PathPart('') :Chained('domain_part') :Args(0) {
     my (@whitelist, @blacklist);
     if( defined $amavis_domain_user ) {
         $amavis_policy = $amavis_domain_user->policy;
-        @whitelist = $amavis_domain_user->blacklisted_addresses;
-        @blacklist = $amavis_domain_user->whitelisted_addresses;
+        @whitelist = $amavis_domain_user->whitelisted_addresses;
+        @blacklist = $amavis_domain_user->blacklisted_addresses;
     }
 
     $c->stash->{'amavis_user'} = $amavis_domain_user;
@@ -225,7 +336,6 @@ sub mailbox_part :PathPart('mailbox') :Chained('domain_part') :CaptureArgs(1) {
         $c->forward('check_domain_admin');
     }
 
-    #$c->response->body('Looks like we want ' . $mailbox . '@' . $c->stash->{'mail_domain'}->domain);
     $c->stash->{'mailbox'} = $mailbox;
     $c->stash->{'email_address'} = $mailbox . '@' . $mail_domain->domain;
 }
@@ -240,8 +350,26 @@ user and allow them to be edited.
 
 sub mailbox_view :PathPart('') :Chained('mailbox_part') :Args(0) {
     my ($self, $c) = @_;
+    $c->stash->{'template'} = 'domain/mailbox_view.tt';
 
-    $c->response->body('Looks like we want ' . $c->stash->{'email_address'});
+    my $amavis_user = $c->model('AmavisDB::User')->find(
+                          { 'email' => $c->stash->{'email_address'} } );
+
+    my $policies_rs = $c->model('AmavisDB::Policy');
+
+    my $amavis_policy;
+    my (@whitelist, @blacklist);
+    if( defined $amavis_user ) {
+        $amavis_policy = $amavis_user->policy;
+        @whitelist = $amavis_user->whitelisted_addresses;
+        @blacklist = $amavis_user->blacklisted_addresses;
+    }
+
+    $c->stash->{'amavis_user'} = $amavis_user;
+    $c->stash->{'policy'} = $amavis_policy;
+    $c->stash->{'whitelist'} = \@whitelist;
+    $c->stash->{'blacklist'} = \@blacklist;
+    $c->stash->{'available_policies'} = $policies_rs;
 }
 
 =head2 setpolicy
@@ -260,8 +388,14 @@ sub setpolicy :Private {
                              { 'id' => $policy_id } ) if defined $policy_id and
                                                          $policy_id =~ /\A\d+\z/;
 
+    # If the policy is being deleted, the amavisd-new user must be deleted.
+    # When we do this we must also clear the wblist for the user.
     if( $policy_id eq 'none' and defined $amavis_user ) {
-            $amavis_user->delete;
+        my @mailaddrs = $amavis_user->white_black_addresses;
+        foreach my $mailaddr (@mailaddrs) {
+            $amavis_user->remove_from_white_black_addresses( $mailaddr );
+        }
+        $amavis_user->delete;
     }
     elsif( defined $amavis_policy ) {
         if( defined $amavis_user ) {
@@ -277,6 +411,68 @@ sub setpolicy :Private {
         }
     }
 
+}
+
+sub addwblist :Private {
+    my ($self, $c, $email, $listed, $wb) = @_;
+    my $valid_listed;
+    my $priority;
+
+    my $amavis_user = $c->model('AmavisDB::User')->find(
+                          { 'email' => $email } ) if defined $email;
+
+    if( $listed =~ /\A@/ ) {
+        $valid_listed = 'dummy' . $listed;
+        $priority = $c->config->{'mailaddr_priority_domain'};
+    }
+    else {
+        $valid_listed = $listed;
+        $priority = $c->config->{'mailaddr_priority_mailbox'};
+    }
+
+    return 1 if( !Email::Valid->address($valid_listed) );
+
+    my $mailaddr = $c->model('AmavisDB::Mailaddr')->find(
+                       { 'email' => $listed } );
+
+    if( defined $amavis_user and $wb =~ /\A(W|B)\z/ ) {
+        if( ! defined $mailaddr ) {
+            $mailaddr = $c->model('AmavisDB::Mailaddr')->new(
+                            { 'priority' => $priority,
+                              'email' => $listed } );
+            $mailaddr->insert;
+        }
+        elsif( $amavis_user->white_black_addresses(
+                   { 'email' => $listed } )->count != 0 ) {
+            return 1;
+        }
+
+        $amavis_user->add_to_white_black_addresses( $mailaddr,
+                                                    { 'wb' => $wb } );
+    }
+
+}
+
+sub delwblist :Private {
+    my ($self, $c, $email, $listed) = @_;
+
+    my $amavis_user = $c->model('AmavisDB::User')->find(
+                          { 'email' => $email } ) if defined $email;
+
+    return 1 if ! defined $amavis_user;
+
+    if( ref($listed) eq 'ARRAY') {
+        foreach my $wba (@$listed) {
+            my $mailaddr = $c->model('AmavisDB::Mailaddr')->find(
+                               { 'id' => $wba } );
+            $amavis_user->remove_from_white_black_addresses( $mailaddr );
+        }
+    }
+    else {
+        my $mailaddr = $c->model('AmavisDB::Mailaddr')->find(
+                               { 'id' => $listed } );
+        $amavis_user->remove_from_white_black_addresses( $mailaddr );
+    }
 }
 
 =head1 AUTHOR
