@@ -23,6 +23,8 @@
 <td><input type="submit" id="updatebutton" name="updatebutton" value="Update"></td>
 </tr>
 </table>
+<span class="minor_note">Disabling filtering will delete all white and blacklist entries.
+This can not be undone.</span>
 </form>
 </div>
 
@@ -53,6 +55,8 @@
 <td><input type="submit" id="addwlistbutton" name="addwlistbutton" value="Add Whitelist Entry"></td>
 </tr>
 </table>
+<span class="minor_note">You can add an email address like "user@example.com" or an entire domain like<br>
+"@exampledomain.com".  Whitelisting a user will override a blacklisting for that user's domain.</span>
 </form>
 </div>
 
@@ -83,6 +87,8 @@
 <td><input type="submit" id="addblistbutton" name="addblistbutton" value="Add Blacklist Entry"></td>
 </tr>
 </table>
+<span class="minor_note">Blacklisting is almost never the correct thing to do.  This is not a useful<br>
+anti-spam measure.  Please think twice before using the blacklist.</spam>
 </form>
 </div>
 [% END -%]

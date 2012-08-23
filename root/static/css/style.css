@@ -41,3 +41,8 @@ padding-right: 2em;
 table.domain_list th {
 text-align: left;
 }
+
+span.minor_note {
+font-size: smaller;
+color: #666;
+}
