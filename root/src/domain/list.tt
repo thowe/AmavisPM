@@ -8,7 +8,7 @@
 [% FOREACH domain IN admin_domains -%]
 <tr><td><a href="[% c.uri_for(c.controller('Domain').action_for('domain_view'), [domain.domain] ) %]"
     >[% domain.domain %]</a></td>
-<td>[% IF domain_policies.$domain %][% domain_policies.$domain %][% ELSE %]no default policy[% END %]</td></tr>
+<td>[% IF domain_policies.$domain %][% domain_policies.$domain %][% ELSE %]filtering disabled[% END %]</td></tr>
 [% END -%]
 </tbody>
 </table>
