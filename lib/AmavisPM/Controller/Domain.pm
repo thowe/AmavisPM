@@ -459,7 +459,7 @@ sub delwblist :Private {
     my $amavis_user = $c->model('AmavisDB::User')->find(
                           { 'email' => $email } ) if defined $email;
 
-    return 1 if ! defined $amavis_user;
+    return 1 if( ! defined $amavis_user or ! defined $listed );
 
     if( ref($listed) eq 'ARRAY') {
         foreach my $wba (@$listed) {
