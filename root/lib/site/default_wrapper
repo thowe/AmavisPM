@@ -3,11 +3,11 @@
 <head>
 <title>Spam Manage</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<link rel="stylesheet" href="/static/css/style.css" type="text/css" media="screen">
+<link rel="stylesheet" href="[% c.uri_for('/static/css/style.css') %]" type="text/css" media="screen">
 </head>
 <body>
 <div id="header">
-<img class="logo" src="/static/images/logo.png" alt="[% logoname %]">
+<img class="logo" src="[% c.uri_for('/static/images/logo.png') %]" alt="[% logoname %]">
 <h1>Spam Settings Manager</h1>
 </div>
 <div id="content">
@@ -17,7 +17,7 @@
 [% content %]
 </div>
 <div class="footer">
-<a href="[% c.uri_for(c.controller('Auth').action_for('logout')) %]">Logout</a> | 
+<a href="[% c.uri_for(c.controller('Auth').action_for('logout')) %]">Logout</a> |
 <a href="[% c.uri_for(c.controller('Domain').action_for('domain')) %]">Home</a>
 </div>
 </body>
